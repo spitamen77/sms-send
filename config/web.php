@@ -48,11 +48,11 @@ $config = [
             'class' => 'yii\web\UrlManager',
             'showScriptName' => false,
             'enablePrettyUrl' => true,
-            'rules' => array(
-                '<controller:\w+>/<id:\d+>' => '/view',
-                '<controller:\w+>/<action:\w+>/<id:\d+>' => '/',
-                '<controller:\w+>/<action:\w+>' => '/',
-            ),
+//            'rules' => array(
+//                '<controller:\w+>/<id:\d+>' => '/view',
+//                '<controller:\w+>/<action:\w+>/<id:\d+>' => '/',
+//                '<controller:\w+>/<action:\w+>' => '/',
+//            ),
         ],
 
     ],
@@ -65,14 +65,14 @@ if (YII_ENV_DEV) {
     $config['modules']['debug'] = [
         'class' => 'yii\debug\Module',
         // uncomment the following to add your IP if you are not connecting from localhost.
-        'allowedIPs' => ['127.0.0.1', '::1', '172.17.0.1', '192.168.80.1'], // Добавьте '172.17.0.1' в список разрешенных IP-адресов
+        'allowedIPs' => ['127.0.0.1', '::1', '192.168.80.1'],
     ];
 
     $config['bootstrap'][] = 'gii';
     $config['modules']['gii'] = [
         'class' => 'yii\gii\Module',
         // uncomment the following to add your IP if you are not connecting from localhost.
-        'allowedIPs' => ['127.0.0.1', '::1', '172.17.0.1', '192.168.80.1'], // Добавьте '172.17.0.1' в список разрешенных IP-адресов
+        'allowedIPs' => ['127.0.0.1', '::1', '192.168.80.1'],
     ];
 }
 
