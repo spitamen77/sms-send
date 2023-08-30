@@ -98,15 +98,18 @@ class SmsController extends Controller
                     if (strlen($piece) != 12) {
                         continue;
                     }
+                    $uniqId = uniqid();
 
                     $model2 = new Sms();
                     $model2->phone_number = $piece;
                     $model2->status = Helpers::WAITING;
                     $model2->message = $model->message;
+                    $model2->user_sms_id = $uniqId;
+                    $model2->sms_count = 1;
                     $model2->save(false);
 
                     $phones[] = [
-                        'user_sms_id' => uniqid(), // Уникальный идентификатор для каждого сообщения
+                        'user_sms_id' => $uniqId, // Уникальный идентификатор для каждого сообщения
                         'to' => $piece,
                         'text' => $model->message,
                     ];;

@@ -17,8 +17,8 @@ class SmsSearch extends Sms
     public function rules()
     {
         return [
-            [['id', 'user_sms_id', 'sms_count'], 'integer'],
-            [['message_id', 'message', 'phone_number', 'status', 'status_date', 'created_at', 'updated_at'], 'safe'],
+            [['id','sms_count'], 'integer'],
+            [['message_id', 'message', 'phone_number', 'status', 'status_date', 'created_at', 'updated_at', 'user_sms_id'], 'safe'],
         ];
     }
 
