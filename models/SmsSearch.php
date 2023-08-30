@@ -40,7 +40,7 @@ class SmsSearch extends Sms
      */
     public function search($params)
     {
-        $query = Sms::find();
+        $query = Sms::find()->orderBy(['id'=>SORT_DESC]);
 
         // add conditions that should always apply here
 

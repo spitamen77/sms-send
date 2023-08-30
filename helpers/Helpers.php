@@ -11,7 +11,7 @@
  * @date     2023.08.30 16:41
  */
 
-namespace helpers;
+namespace app\helpers;
 
 class Helpers
 {
@@ -22,4 +22,17 @@ class Helpers
     const EXPIRED = 'EXPIRED';     // Срок жизни смс истек
     const REJECTD = 'REJECTD';     // Отклонено
     const DELETED = 'DELETED';     // Ошибка при отправке запроса
+
+    const STATUS = [
+        self::WAITING => 'СМС в ожидании отправления оператору',
+        self::TRANSMTD => 'СМС передан сотовому оператору, но не получен статус',
+        self::DELIVRD => 'Доставлено',
+        self::UNDELIV => 'Недоставлено',
+        self::EXPIRED => 'Срок жизни смс истек',
+        self::REJECTD => 'Отклонено',
+        self::DELETED => 'Ошибка при отправке запроса',
+    ];
+
+
+
 }

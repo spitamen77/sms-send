@@ -2,8 +2,14 @@
 
 namespace app\controllers;
 
+use app\components\EskizSms;
+use app\helpers\Helpers;
 use app\models\Sms;
 use app\models\SmsSearch;
+use GuzzleHttp\Exception\GuzzleException;
+use Yii;
+use yii\filters\AccessControl;
+use yii\helpers\Url;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
@@ -21,6 +27,17 @@ class SmsController extends Controller
         return array_merge(
             parent::behaviors(),
             [
+                'access' => [
+                    'class' => AccessControl::class,
+                    'only' => ['create', 'index'],
+                    'rules' => [
+                        [
+                            'actions' => ['create','index'],
+                            'allow' => true,
+                            'roles' => ['@'],
+                        ],
+                    ],
+                ],
                 'verbs' => [
                     'class' => VerbFilter::className(),
                     'actions' => [
@@ -64,14 +81,42 @@ class SmsController extends Controller
      * Creates a new Sms model.
      * If creation is successful, the browser will be redirected to the 'view' page.
      * @return string|\yii\web\Response
+     * @throws GuzzleException
      */
     public function actionCreate()
     {
         $model = new Sms();
 
         if ($this->request->isPost) {
-            if ($model->load($this->request->post()) && $model->save()) {
-                return $this->redirect(['view', 'id' => $model->id]);
+            if ($model->load($this->request->post())) {
+
+                $pieces = explode(",", str_replace(" ", '', $model->phone_number));
+
+                $phones = [];
+
+                foreach ($pieces as $piece) {
+                    if (strlen($piece) != 12) {
+                        continue;
+                    }
+
+                    $model2 = new Sms();
+                    $model2->phone_number = $piece;
+                    $model2->status = Helpers::WAITING;
+                    $model2->message = $model->message;
+                    $model2->save(false);
+
+                    $phones[] = [
+                        'user_sms_id' => uniqid(), // Уникальный идентификатор для каждого сообщения
+                        'to' => $piece,
+                        'text' => $model->message,
+                    ];;
+                }
+
+                $sms = new EskizSms();
+                $sms->sendBatchSms($phones, $model->message,4546, 123);
+
+                Yii::$app->session->setFlash('success', 'Успешно выполнено!');
+                return $this->redirect(['index']);
             }
         } else {
             $model->loadDefaultValues();
@@ -80,6 +125,11 @@ class SmsController extends Controller
         return $this->render('create', [
             'model' => $model,
         ]);
+    }
+
+    public function actionCallback()
+    {
+
     }
 
     /**
@@ -91,9 +141,12 @@ class SmsController extends Controller
      */
     public function actionUpdate($id)
     {
+        return $this->redirect(['index']);
         $model = $this->findModel($id);
 
-        if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
+        if ($this->request->isPost && $model->load($this->request->post())) {
+            $model->message = Url::to(['sms/callback'], true);
+            $model->save();
             return $this->redirect(['view', 'id' => $model->id]);
         }
 
@@ -111,7 +164,7 @@ class SmsController extends Controller
      */
     public function actionDelete($id)
     {
-        $this->findModel($id)->delete();
+        //$this->findModel($id)->delete();
 
         return $this->redirect(['index']);
     }

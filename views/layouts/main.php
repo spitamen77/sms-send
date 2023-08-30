@@ -41,7 +41,7 @@ Yii::$app->name = 'SMS sender';
     echo Nav::widget([
         'options' => ['class' => 'navbar-nav'],
         'items' => [
-            ['label' => 'Asosiy', 'url' => ['/site/index']],
+//            ['label' => 'Asosiy', 'url' => ['/site/index']],
             ['label' => 'Biz haqimizda', 'url' => ['/site/about']],
             ['label' => 'Aloqa', 'url' => ['/site/contact']],
             Yii::$app->user->isGuest

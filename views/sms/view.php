@@ -1,12 +1,13 @@
 <?php
 
+use app\helpers\Helpers;
 use yii\helpers\Html;
 use yii\widgets\DetailView;
 
 /** @var yii\web\View $this */
 /** @var app\models\Sms $model */
 
-$this->title = $model->id;
+$this->title = $model->phone_number;
 $this->params['breadcrumbs'][] = ['label' => 'Sms', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
@@ -16,15 +17,8 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= Html::a('Back', ['index'], ['class' => 'btn btn-default']) ?>
-        <?= Html::a('Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
-        <?= Html::a('Delete', ['delete', 'id' => $model->id], [
-            'class' => 'btn btn-danger',
-            'data' => [
-                'confirm' => 'Are you sure you want to delete this item?',
-                'method' => 'post',
-            ],
-        ]) ?>
+        <?= Html::a('Back', ['index'], ['class' => 'btn btn-primary']) ?>
+
     </p>
 
     <?= DetailView::widget([
@@ -36,7 +30,21 @@ $this->params['breadcrumbs'][] = $this->title;
             'message',
             'phone_number',
             'sms_count',
-            'status',
+//            'status',
+            [
+                'attribute' => 'status',
+                'value' => function ($model) {
+                    if ($model->status == Helpers::DELIVRD){
+                        return "<span class='text-success'>".Helpers::STATUS[$model->status]."</span>";
+                    } elseif ($model->status != Helpers::WAITING) {
+                        return "<span class='text-danger'>".Helpers::STATUS[$model->status]."</span>";
+                    } else {
+                        return "<span class='text-warning'>".Helpers::STATUS[$model->status]."</span>";
+                    }
+                },
+                'format' => 'html',
+            ],
+
             'status_date',
             'created_at',
             'updated_at',
