@@ -15,6 +15,7 @@ $config = [
         'request' => [
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => 'n1WWrBaVkbZEc0O9597PJVzFVMuW1WCR',
+            'baseUrl' => ''
         ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
@@ -42,14 +43,18 @@ $config = [
             ],
         ],
         'db' => $db,
-        /*
+
         'urlManager' => [
-            'enablePrettyUrl' => true,
+            'class' => 'yii\web\UrlManager',
             'showScriptName' => false,
-            'rules' => [
-            ],
+            'enablePrettyUrl' => true,
+            'rules' => array(
+                '<controller:\w+>/<id:\d+>' => '/view',
+                '<controller:\w+>/<action:\w+>/<id:\d+>' => '/',
+                '<controller:\w+>/<action:\w+>' => '/',
+            ),
         ],
-        */
+
     ],
     'params' => $params,
 ];
@@ -60,14 +65,14 @@ if (YII_ENV_DEV) {
     $config['modules']['debug'] = [
         'class' => 'yii\debug\Module',
         // uncomment the following to add your IP if you are not connecting from localhost.
-        //'allowedIPs' => ['127.0.0.1', '::1'],
+        'allowedIPs' => ['127.0.0.1', '::1', '172.17.0.1', '192.168.80.1'], // Добавьте '172.17.0.1' в список разрешенных IP-адресов
     ];
 
     $config['bootstrap'][] = 'gii';
     $config['modules']['gii'] = [
         'class' => 'yii\gii\Module',
         // uncomment the following to add your IP if you are not connecting from localhost.
-        //'allowedIPs' => ['127.0.0.1', '::1'],
+        'allowedIPs' => ['127.0.0.1', '::1', '172.17.0.1', '192.168.80.1'], // Добавьте '172.17.0.1' в список разрешенных IP-адресов
     ];
 }
 
