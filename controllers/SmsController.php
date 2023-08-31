@@ -68,12 +68,25 @@ class SmsController extends Controller
      * Displays a single Sms model.
      * @param int $id ID
      * @return string
-     * @throws NotFoundHttpException if the model cannot be found
+     * @throws NotFoundHttpException|GuzzleException if the model cannot be found
      */
     public function actionView($id)
     {
+        $eskizSms = new EskizSms();
+        $model = $this->findModel($id);
+
+        $statusData = $eskizSms->getDispatchStatus($model->user_sms_id, Yii::$app->params['sms_dispatchId']);
+
+        if ($statusData) {
+            $model->status = $statusData['status'];
+            $model->message_id = $statusData['message_id'];
+            $model->status_date = $statusData['status_date'];
+            $model->sms_count = $statusData['sms_count'];
+            $model->save();
+        }
+
         return $this->render('view', [
-            'model' => $this->findModel($id),
+            'model' => $model,
         ]);
     }
 
@@ -116,9 +129,13 @@ class SmsController extends Controller
                 }
 
                 $sms = new EskizSms();
-                $sms->sendBatchSms($phones, $model->message,4546, 123);
 
-                Yii::$app->session->setFlash('success', 'Успешно выполнено!');
+                if ($sms->sendBatchSms($phones)) {
+                    Yii::$app->session->setFlash('success', 'Успешно выполнено!');
+                } else {
+                    Yii::$app->session->setFlash('error', 'Рассылка не отправлена');
+                }
+
                 return $this->redirect(['index']);
             }
         } else {
@@ -132,7 +149,26 @@ class SmsController extends Controller
 
     public function actionCallback()
     {
+        $callbackData = Yii::$app->request->post(); // Получаем данные POST обратного вызова
 
+        if (isset($callbackData['phone_number']) && isset($callbackData['status'])) {
+            $userPhone = $callbackData['user_sms_id'];
+            $status = $callbackData['status'];
+            $messageId = $callbackData['message_id'] ?? null; // Если данные message_id могут отсутствовать
+            $statusDate = $callbackData['status_date'] ?? null; // Если данные status_date могут отсутствовать
+
+            $smsModel = Sms::findOne(['phone_number' => $userPhone, 'status' => Helpers::WAITING]);
+
+            if ($smsModel !== null) {
+                $smsModel->message_id = $messageId;
+                $smsModel->status = $status;
+                $smsModel->status_date = $statusDate;
+                $smsModel->save(false);
+            }
+        }
+
+        // Возвращаем пустой ответ, чтобы подтвердить успешное получение данных
+        Yii::$app->response->setStatusCode(200);
     }
 
     /**

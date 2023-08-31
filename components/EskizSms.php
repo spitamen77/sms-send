@@ -16,16 +16,26 @@ namespace app\components;
 use GuzzleHttp\Exception\GuzzleException;
 use Yii;
 use GuzzleHttp\Client;
+use yii\helpers\Url;
 
 class EskizSms
 {
     private string $apiUrl;
     private string $token;
+    private bool $smsEnabled;
 
     public function __construct()
     {
         $this->apiUrl = Yii::$app->params['apiUrl'];
-        $this->token = $this->getAccessToken(Yii::$app->params['sms_email'], Yii::$app->params['sms_password']);
+        $token = $this->getAccessToken(Yii::$app->params['sms_email'], Yii::$app->params['sms_password']);
+
+        if ($token) {
+            $this->token = $token;
+            $this->smsEnabled = true;
+        } else {
+            Yii::$app->session->setFlash('error', 'Eskiz - «Неправильный логин или пароль»');
+            $this->smsEnabled = false; // Флаг, запрещающий отправку SMS
+        }
     }
 
 
@@ -33,14 +43,18 @@ class EskizSms
      * Метод для отправки одиночного SMS
      * @param string $to
      * @param string $message
-     * @param $from
-     * @param string $callbackUrl
      * @return string
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function sendSingleSms(string $to, string $message, $from, string $callbackUrl = '')
+    public function sendSingleSms(string $to, string $message)
     {
-        $client = new Client();
+        if (!$this->smsEnabled) {
+            return false; // Пропуск отправки, так как токен не был успешно получен
+        }
+
+        $client = new Client([
+            'verify' => false,
+        ]);
 
         $response = $client->post("{$this->apiUrl}/message/sms/send", [
             'headers' => [
@@ -49,8 +63,8 @@ class EskizSms
             'form_params' => [
                 'mobile_phone' => $to,
                 'message' => $message,
-                'from' => $from,
-                'callback_url' => $callbackUrl,
+                'from' => Yii::$app->params['sms_from'],
+                'callback_url' => Url::to(['sms/callback'], true),
             ],
         ]);
 
@@ -60,20 +74,23 @@ class EskizSms
     /**
      * Метод для отправки массовых SMS
      * @param array $phones
-     * @param string $message
-     * @param $from
-     * @param int $dispatchId
      * @return string
      * @throws GuzzleException
      */
-    public function sendBatchSms(array $phones, string $message, $from, int $dispatchId)
+    public function sendBatchSms(array $phones)
     {
-        $client = new Client();
+        if (!$this->smsEnabled) {
+            return false; // Пропуск отправки, так как токен не был успешно получен
+        }
+
+        $client = new Client([
+            'verify' => false,
+        ]);
 
         $data = [
             'messages' => $phones,
-            'from' => $from,
-            'dispatch_id' => $dispatchId,
+            'from' => Yii::$app->params['sms_from'],
+            'dispatch_id' => Yii::$app->params['sms_dispatchId'],
         ];
 
         $response = $client->post("{$this->apiUrl}/message/sms/send-batch", [
@@ -86,24 +103,70 @@ class EskizSms
         return $response->getBody()->getContents();
     }
 
-    public function getAccessToken(string $email, string $password): string
+    /**
+     * Статус рассылки
+     * @param string $userId
+     * @param int $dispatchId
+     * @return mixed
+     * @throws GuzzleException
+     */
+    public function getDispatchStatus(string $userId, int $dispatchId)
     {
-        $client = new Client();
+        if (!$this->smsEnabled) {
+            return false; // Пропуск отправки, так как токен не был успешно получен
+        }
 
-        $response = $client->post("{$this->apiUrl}/auth/login", [
-            'form_params' => [
-                'email' => $email,
-                'password' => $password,
+        $client = new Client([
+            'verify' => false,
+        ]);
+
+        $response = $client->get("{$this->apiUrl}/message/sms/get-dispatch-status", [
+            'headers' => [
+                'Authorization' => "Bearer {$this->token}",
+            ],
+            'query' => [
+                'user_id' => $userId,
+                'dispatch_id' => $dispatchId,
             ],
         ]);
 
         $data = json_decode($response->getBody(), true);
 
-        if (isset($data['token'])) {
-            return $data['token'];
-        }
+        // Обработка и возврат данных статуса рассылки
+        return $data;
+    }
 
-        return 'false';
+    /**
+     * @param string $email
+     * @param string $password
+     * @return false|mixed|string
+     */
+    public function getAccessToken(string $email, string $password)
+    {
+        try {
+            $client = new Client([
+                'verify' => false, // Отключение проверки SSL-сертификата
+            ]);
+
+            $response = $client->post("{$this->apiUrl}/auth/login", [
+                'form_params' => [
+                    'email' => $email,
+                    'password' => $password,
+                ],
+            ]);
+
+            $data = json_decode($response->getBody(), true);
+
+            if (isset($data['token'])) {
+                return $data['token'];
+            } else {
+                return false;
+            }
+        } catch (GuzzleException $e) {
+            // Обработка ошибки Guzzle
+            echo $e->getMessage();
+        }
+        return false;
     }
 
 
